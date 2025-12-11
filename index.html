@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APKRIFT - Mods & Apps</title>
+    <title>APKRIFT - Mods, Apps & Guides</title>
     
     <!-- External CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -28,6 +28,7 @@
             background: var(--bg-gradient); 
             color: var(--text-main);
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         /* --- HEADER & TABS --- */
@@ -73,22 +74,23 @@
         .tab-menu {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             margin-top: 25px;
+            flex-wrap: wrap;
         }
         
         .tab-btn {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.2);
             color: #ccc;
-            padding: 10px 35px;
+            padding: 10px 25px;
             border-radius: 30px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
-            min-width: 130px;
+            min-width: 120px;
         }
 
         .tab-btn:hover {
@@ -210,6 +212,29 @@
         .final-content { background: #1a1a1a; padding: 40px; border-radius: 20px; text-align: center; max-width: 400px; border: 1px solid #333; color: white; width: 90%; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
         .blink { animation: blinker 1.5s linear infinite; color: #ff357a; font-weight: bold; margin: 10px 0; }
 
+        /* Fake Notification Toast */
+        #notification-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(30, 30, 40, 0.95);
+            border-left: 4px solid #00c851;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            z-index: 9000;
+            transform: translateX(-150%);
+            transition: transform 0.5s ease-in-out;
+            max-width: 300px;
+            backdrop-filter: blur(5px);
+        }
+        #notification-toast.show-toast { transform: translateX(0); }
+        .toast-img { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #333; }
+        .toast-text { font-size: 0.8rem; line-height: 1.3; color: #fff; }
+        .toast-text span { font-weight: bold; color: #00c851; }
+
         /* Utility */
         .hidden { display: none !important; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -226,7 +251,7 @@
         <header class="home-header">
             <div class="container">
                 <h1 class="logo-text"><i class="fas fa-gamepad"></i> APKRIFT</h1>
-                <p class="text-white-50">Premium Mods & Tweaks</p>
+                <p class="text-white-50">Mods, Apps & Guides</p>
                 
                 <div class="search-container">
                     <input type="search" class="form-control" placeholder="Type to search..." id="searchInput">
@@ -240,22 +265,17 @@
                     <button class="tab-btn" id="btn-apps" onclick="switchTab('apps')">
                         <i class="fas fa-mobile-alt"></i> APPS
                     </button>
+                    <button class="tab-btn" id="btn-guides" onclick="switchTab('guides')">
+                        <i class="fas fa-book"></i> GUIDES
+                    </button>
                 </div>
             </div>
         </header>
 
         <div class="container pb-5">
-            
-            <!-- Games Section (Visible by Default) -->
-            <div id="games-container" class="row">
-                <!-- Games injected here -->
-            </div>
-
-            <!-- Apps Section (Hidden by Default) -->
-            <div id="apps-container" class="row hidden">
-                <!-- Apps injected here -->
-            </div>
-
+            <div id="games-container" class="row"></div>
+            <div id="apps-container" class="row hidden"></div>
+            <div id="guides-container" class="row hidden"></div>
         </div>
     </div>
 
@@ -271,7 +291,7 @@
 
             <div class="app-box text-center">
                 <img id="gen-img" src="" class="app-icon-gen" alt="Icon">
-                <h2 id="gen-title" class="fw-bold mb-2 text-white">Game Title</h2>
+                <h2 id="gen-title" class="fw-bold mb-2 text-white">Title</h2>
                 <div class="status-badge"><i class="fas fa-circle fa-xs"></i> Server Status: Online</div>
                 <p class="text-white-50 small mt-2">Last updated: <span id="currentDate"></span></p>
 
@@ -279,11 +299,11 @@
 
                 <!-- Step 1 -->
                 <div id="step1">
-                    <p class="mb-4 text-white">Click start to download</p>
-                    <button class="btn-action" onclick="goToStep2()">START PROCESS</button>
+                    <p class="mb-4 text-white" id="step1-text">Click start to download</p>
+                    <button class="btn-action" id="step1-btn" onclick="goToStep2()">START PROCESS</button>
                 </div>
 
-                <!-- Step 2 -->
+                <!-- Step 2 (Platform Select - Hidden for Guides) -->
                 <div id="step2" style="display:none;">
                     <p class="text-white">Select your platform:</p>
                     <div class="platform-grid" style="display: grid;">
@@ -297,7 +317,7 @@
                     <button class="btn-action" id="platformBtn" style="opacity: 0.5; pointer-events: none;" onclick="startConsole()">CONTINUE</button>
                 </div>
 
-                <!-- Step 3 -->
+                <!-- Step 3 (Console) -->
                 <div id="step3" style="display:none;">
                     <p class="text-white-50 mb-2">Processing...</p>
                     <div class="progress-container" style="display:block;">
@@ -316,56 +336,71 @@
         <div class="final-content">
             <i class="fas fa-shield-alt fa-4x mb-3 text-warning"></i>
             <h3>Verification Required</h3>
-            <p class="text-white-50">Please verify that you are human to complete the injection.</p>
+            <p class="text-white-50">Please verify that you are human to complete the download.</p>
             <div class="blink mb-3">Time Remaining: <span id="timer">03:00</span></div>
-            <a href="https://redirectapps.org/cl/i/99n4wp" class="btn-action text-decoration-none d-block text-white">VERIFY NOW</a>
+            <a href="#" id="verifyBtn" class="btn-action text-decoration-none d-block text-white">VERIFY NOW</a>
+        </div>
+    </div>
+
+    <!-- FAKE NOTIFICATION ELEMENT -->
+    <div id="notification-toast">
+        <img src="https://ui-avatars.com/api/?background=random&color=fff" class="toast-img" id="toast-img">
+        <div class="toast-text">
+            <span id="toast-name">User</span> successfully downloaded <br>
+            <strong class="text-warning" id="toast-game">App Name</strong>
         </div>
     </div>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // --- 1. DATA DATABASE ---
+        // --- 1. FULL DATABASE ---
         const appDatabase = [ 
-            // GAMES
-            { type: 'game', title: "Hollow Knight: Silksong Guide", rating: "4.9", reviews: "9,850", image: "https://i.imgur.com/xc9rUot.jpeg", desc: "A Guide through Pharloom's various caverns, tunnels, forests, and areas." },
-            { type: 'game', title: "Car Parking Multiplayer", rating: "4.8", reviews: "5,200", image: "https://i.imgur.com/OsBjBd6.jpeg", desc: "Unlimited Money & Coins Mod." },
-            { type: 'game', title: "Toca Boca World", rating: "5.0", reviews: "12k", image: "https://i.imgur.com/NAxmbUn.jpeg", desc: "All maps and furniture unlocked." },
-            { type: 'game', title: "Grand Theft Auto San Andreas", rating: "4.9", reviews: "8,500", image: "https://i.imgur.com/2IOrqlZ.jpeg", desc: "Cleo Menu & Graphics Mod." },
+            // --- GAMES (HIGH DEMAND) ---
+            { type: 'game', title: "Monopoly GO!", rating: "4.9", reviews: "2M+", image: "https://i.imgur.com/j8sqcfc.png", desc: "Unlimited Dice Rolls & Sticker Packs." },
+            { type: 'game', title: "Brawl Stars", rating: "4.8", reviews: "15k", image: "https://i.imgur.com/GJKhvLp.png", desc: "Null's Private Server (Unlimited Gems)." },
+            { type: 'game', title: "Free Fire MAX", rating: "4.7", reviews: "100M+", image: "https://i.imgur.com/LHZAo1O.jpeg", desc: "Auto-Headshot Menu & Aimbot." },
             { type: 'game', title: "Roblox", rating: "4.7", reviews: "25k", image: "https://i.imgur.com/SXAo9LE.png", desc: "Robux Generator & Mod Menu." },
-            { type: 'game', title: "Red Dead Redemption", rating: "4.9", reviews: "4,100", image: "https://i.imgur.com/i3TSBB7.jpeg", desc: "Mobile Port Full Game." },
-            { type: 'game', title: "Clash Royale", rating: "4.8", reviews: "6,700", image: "https://i.imgur.com/rjK6s5S.png", desc: "Private Server (Nulls Royale)." },
-            { type: 'game', title: "Five Nights at Freddy's 4", rating: "4.6", reviews: "3,200", image: "https://i.imgur.com/SGvPCaJ.jpeg", desc: "Full Game Unlocked." },
-            { type: 'game', title: "Elite Auto Brazil Wheelie", rating: "4.5", reviews: "1,500", image: "https://i.imgur.com/quHRlqB.jpeg", desc: "Unlimited Money." },
-            { type: 'game', title: "Truck Simulator", rating: "4.7", reviews: "2,800", image: "https://i.imgur.com/wE9Hvcn.jpeg", desc: "All Trucks Unlocked." },
-            { type: 'game', title: "Null's Brawl", rating: "5.0", reviews: "15k", image: "https://i.imgur.com/GJKhvLp.png", desc: "Unlimited Gems & Brawlers." },
-            { type: 'game', title: "Elon Game", rating: "4.2", reviews: "850", image: "https://i.imgur.com/V2VPuHR.jpeg", desc: "Premium Features Unlocked." },
-            { type: 'game', title: "Sonic Dash", rating: "4.8", reviews: "4,500", image: "https://i.imgur.com/0uU5BLo.jpeg", desc: "Unlimited Rings." },
-            { type: 'game', title: "Preserve", rating: "4.4", reviews: "1,200", image: "https://i.imgur.com/coYXDsi.jpeg", desc: "Full Version." },
-            { type: 'game', title: "Prison Blox: Obby 3D Parkour", rating: "4.6", reviews: "2,100", image: "https://i.imgur.com/8opxh8A.png", desc: "God Mode & Fly." },
-            { type: 'game', title: "CATS: Crash Arena Turbo Stars", rating: "4.7", reviews: "3,600", image: "https://i.imgur.com/kIAB9hl.png", desc: "Unlimited Gems." },
-            { type: 'game', title: "Hidden City", rating: "4.5", reviews: "1,900", image: "https://i.imgur.com/K5lYHS6.png", desc: "Unlimited Energy." },
+            { type: 'game', title: "Pokemon TCG Pocket", rating: "4.9", reviews: "500k", image: "https://i.imgur.com/vokUXt1.jpeg", desc: "God Pack Glitch & Unlimited Hourglasses." },
+            { type: 'game', title: "Car Parking Multiplayer", rating: "4.8", reviews: "5,200", image: "https://i.imgur.com/OsBjBd6.jpeg", desc: "Unlimited Money & Coins Mod." },
+            { type: 'game', title: "eFootball 2025", rating: "4.6", reviews: "8M+", image: "https://i.imgur.com/VV3jF8D.jpeg", desc: "Unlimited Coins & GP Patcher." },
+            { type: 'game', title: "Grand Theft Auto San Andreas", rating: "4.9", reviews: "8,500", image: "https://i.imgur.com/2IOrqlZ.jpeg", desc: "Cleo Menu & Graphics Mod." },
+            { type: 'game', title: "Subway Surfers", rating: "4.8", reviews: "300k", image: "https://i.imgur.com/ADOys1w.jpeg", desc: "Unlimited Keys & God Mode." },
+            { type: 'game', title: "Minecraft PE", rating: "4.9", reviews: "50k", image: "https://i.imgur.com/Slup8bg.jpeg", desc: "Full Version Unlocked (1.21)." },
+            { type: 'game', title: "Pokemon GO", rating: "4.6", reviews: "12k", image: "https://i.imgur.com/HqwXWB6.jpeg", desc: "iSpoofer Joystick & Teleport (No Root)." },
+            { type: 'game', title: "Toca Boca World", rating: "5.0", reviews: "12k", image: "https://i.imgur.com/NAxmbUn.jpeg", desc: "All maps and furniture unlocked." },
 
-            // APPS
-            { type: 'app', title: "Opensignal", rating: "4.5", reviews: "2,000", image: "uploads/opensignal.jpg", desc: "Premium Network Tools." },
-            { type: 'app', title: "Frameo", rating: "4.8", reviews: "5,000", image: "uploads/frameo.jpg", desc: "Premium Unlocked." },
-            { type: 'app', title: "Moovit: Your Transit Tracker", rating: "4.6", reviews: "4,200", image: "uploads/moovit.jpg", desc: "Ad-Free Experience." },
-            { type: 'app', title: "Cici – Your AI assistant", rating: "4.9", reviews: "800", image: "uploads/cici.jpg", desc: "Pro Subscription." },
-            { type: 'app', title: "Audible", rating: "4.8", reviews: "10k", image: "uploads/audible.jpg", desc: "Free Credits Hack." },
-            { type: 'app', title: "Chatbot AI – Search Assistant", rating: "4.7", reviews: "3,500", image: "uploads/chatbot.jpg", desc: "Premium Access." },
-            { type: 'app', title: "ExpressVPN", rating: "4.9", reviews: "18k", image: "uploads/vpn.jpg", desc: "Premium Account Injection." }
+            // --- APPS (UTILITIES) ---
+            { type: 'app', title: "CapCut Pro", rating: "4.9", reviews: "5M+", image: "https://i.imgur.com/9671bj8.png", desc: "No Watermark & Premium Effects." },
+            { type: 'app', title: "GFX Tool Pro", rating: "4.7", reviews: "800k", image: "https://i.imgur.com/dniR6EN.png", desc: "Unlock 90FPS & HDR (No Lag)." },
+            { type: 'app', title: "Lulubox Pro", rating: "4.5", reviews: "1M+", image: "https://i.imgur.com/fi9wOhO.png", desc: "Unlock All Skins (Free Fire/Pubg)." },
+            { type: 'app', title: "Discord Nitro", rating: "4.8", reviews: "50k", image: "https://i.imgur.com/lyurzfF.jpeg", desc: "3 Months Free Boost Generator." },
+            { type: 'app', title: "Spotify Premium", rating: "4.9", reviews: "120k", image: "https://i.imgur.com/e714kzq.jpeg", desc: "Lifetime Premium (No Ads/Offline)." },
+            { type: 'app', title: "ExpressVPN", rating: "4.9", reviews: "18k", image: "https://i.imgur.com/W1J2rwb.png", desc: "Premium Account Injection." },
+
+            // --- GUIDES (HIGH CONVERSION) ---
+            { type: 'guide', title: "Monopoly GO: Dice Strategy", rating: "5.0", reviews: "95k", image: "https://i.imgur.com/yVtqDwQ.jpeg", desc: "Secret Loop to Never Run Out of Dice (PDF)." },
+            { type: 'guide', title: "Hollow Knight: Silksong ", rating: "5.0", reviews: "95k", image: "https://i.imgur.com/9Eae3SJ.jpeg", desc: "Pharloom's various caverns, tunnels, forests, and areas. (PDF)." },
+            { type: 'guide', title: "COD Mobile: Aim Assist Config", rating: "4.9", reviews: "30k", image: "https://i.imgur.com/6NTergm.jpeg", desc: "Pro Sensitivity & No-Recoil Settings (PDF)." },
+            { type: 'guide', title: "GTA 6: Leaked Map & Secrets", rating: "4.8", reviews: "2M+", image: "https://i.imgur.com/50TipMQ.png", desc: "Exclusive Leak of Vice City Map & Cars." },
+            { type: 'guide', title: "Elden Ring: Shadow Guide", rating: "5.0", reviews: "15k", image: "https://i.imgur.com/FMu1nLH.jpeg", desc: "Complete DLC Walkthrough & Maps." },
+            { type: 'guide', title: "Minecraft: Modding Bible", rating: "4.7", reviews: "5k", image: "https://i.imgur.com/dQABsHy.png", desc: "How to Install Shaders on Mobile (PDF)." },
+            { type: 'guide', title: "Free Fire: Heroic Rank Guide", rating: "4.8", reviews: "80k", image: "https://i.imgur.com/k6ygVYm.jpeg", desc: "Top 5 Landing Spots & Strategies (PDF)." }
         ];
+
+        let currentItemType = ''; 
 
         // --- 2. RENDER LOGIC ---
         function renderCards() {
             const gamesContainer = document.getElementById('games-container');
             const appsContainer = document.getElementById('apps-container');
+            const guidesContainer = document.getElementById('guides-container');
 
             appDatabase.forEach(item => {
-                const imgUrl = item.image ? item.image : 'https://placehold.co/150/1a1a1a/FFF?text=' + item.title.charAt(0);
+                const imgUrl = item.image && !item.image.includes('uploads') ? item.image : 'https://placehold.co/150/1a1a1a/FFF?text=' + item.title.charAt(0);
 
                 const cardHTML = `
                 <div class="col-12 col-md-6 col-lg-6 mb-2 search-item">
-                    <div class="game-card" onclick="openGenerator('${item.title}', '${imgUrl}')">
+                    <div class="game-card" onclick="openGenerator('${item.title}', '${imgUrl}', '${item.type}')">
                         <div class="d-flex align-items-center w-100">
                             <div style="background-image: url('${imgUrl}')" class="game-icon"></div>
                             <div class="game-info">
@@ -381,64 +416,59 @@
 
                 if (item.type === 'game') {
                     gamesContainer.innerHTML += cardHTML;
-                } else {
+                } else if (item.type === 'app') {
                     appsContainer.innerHTML += cardHTML;
+                } else if (item.type === 'guide') {
+                    guidesContainer.innerHTML += cardHTML;
                 }
             });
         }
         document.addEventListener('DOMContentLoaded', renderCards);
 
-        // --- 3. TAB SWITCHING LOGIC ---
-        let currentTab = 'games'; // default
-
+        // --- 3. TAB & SEARCH LOGIC ---
         function switchTab(tab) {
-            currentTab = tab;
-            
-            // Buttons
-            document.getElementById('btn-games').classList.remove('active-tab');
-            document.getElementById('btn-apps').classList.remove('active-tab');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
             document.getElementById('btn-' + tab).classList.add('active-tab');
 
-            // Containers
-            if(tab === 'games') {
-                document.getElementById('games-container').classList.remove('hidden');
-                document.getElementById('apps-container').classList.add('hidden');
-            } else {
-                document.getElementById('games-container').classList.add('hidden');
-                document.getElementById('apps-container').classList.remove('hidden');
-            }
-            
-            // Reset Search on tab switch (Optional, remove if unwanted)
+            document.getElementById('games-container').classList.add('hidden');
+            document.getElementById('apps-container').classList.add('hidden');
+            document.getElementById('guides-container').classList.add('hidden');
+
+            document.getElementById(tab + '-container').classList.remove('hidden');
             document.getElementById('searchInput').value = '';
             filterItems('');
         }
 
-        // --- 4. SEARCH LOGIC ---
         function filterItems(filter) {
-            // Select ALL search-items in both containers
             let items = document.querySelectorAll('.search-item');
-            
             items.forEach(function(item) {
                 let title = item.querySelector('.game-title').innerText.toUpperCase();
-                // If filter matches, show it. The parent container (tab) determines if it is actually visible to user.
-                if (title.indexOf(filter) > -1) {
-                     item.style.display = ""; // default bootstrap display
-                } else {
-                     item.style.display = "none";
-                }
+                item.style.display = title.indexOf(filter) > -1 ? "" : "none";
             });
         }
+        document.getElementById('searchInput').addEventListener('keyup', function() { filterItems(this.value.toUpperCase()); });
 
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            filterItems(this.value.toUpperCase());
-        });
-
-
-        // --- 5. GENERATOR & POPUP LOGIC ---
-        function openGenerator(name, imgPath) {
+        // --- 4. GENERATOR LOGIC ---
+        function openGenerator(name, imgPath, type) {
+            currentItemType = type;
             document.getElementById('gen-title').innerText = name;
             document.getElementById('gen-img').src = imgPath;
             document.getElementById('currentDate').innerText = new Date().toLocaleDateString();
+
+            const step1Text = document.getElementById('step1-text');
+            const step1Btn = document.getElementById('step1-btn');
+            
+            if(type === 'guide') {
+                step1Text.innerText = "Guide File: PDF Format (24MB)";
+                step1Btn.innerText = "DOWNLOAD GUIDE";
+            } else if (type === 'app') {
+                step1Text.innerText = "App Injection Ready";
+                step1Btn.innerText = "DOWNLOAD APP";
+            } else {
+                step1Text.innerText = "Game Mod Ready";
+                step1Btn.innerText = "DOWNLOAD GAME";
+            }
+
             resetGenerator();
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('generator-view').classList.remove('hidden');
@@ -461,7 +491,11 @@
 
         function goToStep2() {
             document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
+            if (currentItemType === 'guide') {
+                startConsole(); 
+            } else {
+                document.getElementById('step2').style.display = 'block';
+            }
         }
 
         function selectPlatform(element) {
@@ -475,38 +509,49 @@
         function startConsole() {
             document.getElementById('step2').style.display = 'none';
             document.getElementById('step3').style.display = 'block';
-
             const consoleBox = document.getElementById('consoleBox');
             const progressBar = document.getElementById('progressBar');
-            const gameName = document.getElementById('gen-title').innerText;
+            const itemName = document.getElementById('gen-title').innerText;
             
-            const messages = [
-                "Connecting to secure server...",
-                "Validating request signature...",
-                `Searching for ${gameName} database...`,
-                "Entry point found...",
-                "Injecting modified script...",
-                "Modifying server values...",
-                "Bypassing checksum security...",
-                "Finalizing injection...",
-                "Error: Human Verification Required!"
-            ];
+            let messages = [];
+            if (currentItemType === 'guide') {
+                messages = [
+                    "Connecting to cloud storage...",
+                    `Locating '${itemName}.pdf' in database...`,
+                    "File found (Size: 24.5MB)...",
+                    "Checking SHA-256 Checksum...",
+                    "PDF Integrity: Verified...",
+                    "Generating secure download link...",
+                    "Bypassing bandwidth limiter...",
+                    "Finalizing link generation...",
+                    "Error: Bot Verification Required!"
+                ];
+            } else {
+                messages = [
+                    "Connecting to injection server...",
+                    "Verifying user session...",
+                    `Fetching '${itemName}' configuration...`,
+                    "Modifying package data...",
+                    "Unlocking premium features...",
+                    "Bypassing security signature...",
+                    "Signing APK/IPA file...",
+                    "Finalizing injection...",
+                    "Error: Human Verification Required!"
+                ];
+            }
 
             let i = 0;
             let width = 0;
-
             function addLine() {
                 if (i < messages.length) {
                     const div = document.createElement('div');
                     div.style.marginBottom = "5px";
                     div.innerText = "> " + messages[i];
-                    if(i === messages.length -1) div.style.color = "red";
+                    if(i === messages.length -1) div.style.color = "#ff357a";
                     consoleBox.appendChild(div);
                     consoleBox.scrollTop = consoleBox.scrollHeight;
-                    
                     width += (100 / messages.length);
                     progressBar.style.width = width + "%";
-
                     i++;
                     setTimeout(addLine, Math.random() * 800 + 400);
                 } else {
@@ -518,6 +563,14 @@
 
         function showLocker() {
             const modal = document.getElementById('finalModal');
+            const verifyBtn = document.getElementById('verifyBtn');
+            
+            if(currentItemType === 'guide') {
+                verifyBtn.href = "https://redirectapps.org/cl/i/99n4wp";
+            } else {
+                verifyBtn.href = "https://redirectapps.org/cl/i/99n4wp";
+            }
+
             modal.style.display = 'flex';
             let duration = 180; 
             const timerDisplay = document.getElementById('timer');
@@ -530,6 +583,41 @@
                 if (--duration < 0) duration = 0;
             }, 1000);
         }
+
+        // --- 5. SOCIAL PROOF (FAKE NOTIFICATION) ---
+        const userNames = ["Alex22", "JohnD", "Sarah_X", "Mike99", "GamerPro", "Lisa_M", "DavidK", "Panda88"];
+        const gameNames = appDatabase.map(i => i.title); // Get all game/app titles
+
+        function showNotification() {
+            const toast = document.getElementById('notification-toast');
+            const nameEl = document.getElementById('toast-name');
+            const gameEl = document.getElementById('toast-game');
+            const imgEl = document.getElementById('toast-img');
+
+            // Randomize content
+            const randomName = userNames[Math.floor(Math.random() * userNames.length)];
+            const randomGame = gameNames[Math.floor(Math.random() * gameNames.length)];
+            
+            nameEl.innerText = randomName;
+            gameEl.innerText = randomGame;
+            imgEl.src = `https://ui-avatars.com/api/?name=${randomName}&background=random&color=fff`;
+
+            // Show
+            toast.classList.add('show-toast');
+
+            // Hide after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show-toast');
+            }, 4000);
+
+            // Repeat randomly between 8 and 15 seconds
+            const nextTime = Math.random() * (30000 - 20000) + 20000;
+            setTimeout(showNotification, nextTime);
+        }
+
+        // Start the first notification after 5 seconds
+        setTimeout(showNotification, 5000);
+
     </script>
 </body>
 </html>
