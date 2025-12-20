@@ -610,17 +610,18 @@
             // Hide after 4 seconds
             setTimeout(() => {
                 toast.classList.remove('show-toast');
-            }, 4000);
+            }, 3000);
 
             // Repeat randomly between 8 and 15 seconds
             const nextTime = Math.random() * (30000 - 20000) + 20000;
             setTimeout(showNotification, nextTime);
         }
 
-        // Start the first notification after 5 seconds
-        setTimeout(showNotification, 5000);
+        // Start the first notification after 9 seconds
+        setTimeout(showNotification, 9000);
 
     </script>
 </body>
 </html>
+
 
